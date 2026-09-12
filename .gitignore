@@ -1,0 +1,59 @@
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# Python tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# IDE / editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build output
+dist/
+build/
+.cache/
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Local podcast working files
+*.wav
+*.aiff
+*.aif
+*.flac
+
+# Do not store distribution audio in GitHub
+*.mp3
+*.m4a
+
+# Optional local exports / renders
+renders/
+exports/
