@@ -1,0 +1,24 @@
+title: "Щенок"
+
+season: 1
+season_title: "Воспоминания"
+episode: 1
+episode_type: "full"
+
+author: "Алексей Катриди"
+reader: "Сергей Глебкин"
+
+guid: "kz-s01e01"
+
+status: "draft"
+published_at: null
+
+audio:
+  url: null
+  type: "audio/mpeg"
+  duration: null
+  length: null
+
+description: >
+  Рассказ Алексея Катриди.
+  Читает Сергей Глебкин.

@@ -1,0 +1,29 @@
+title: "Катриди заправил"
+
+description: >
+  В этом подкасте мои рассказы звучат голосами разных людей.
+
+language: "ru"
+author: "Алексей Катриди"
+
+site_url: "https://katridi.github.io/katridi-zapravil/"
+feed_url: "https://katridi.github.io/katridi-zapravil/feed.xml"
+
+artwork:
+  url: null
+  width: 3000
+  height: 3000
+
+owner:
+  name: "Алексей Катриди"
+  email: null
+
+itunes:
+  category: "Fiction"
+  explicit: false
+
+distribution:
+  yandex_music: null
+  spotify: null
+  apple_podcasts: null
+  youtube: null
