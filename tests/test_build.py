@@ -39,6 +39,16 @@ class BuildTest(unittest.TestCase):
             "<svg></svg>",
             encoding="utf-8",
         )
+        (self.root / "assets" / "icons").mkdir()
+        for icon_name in [
+            "yandex-music.png",
+            "spotify.png",
+            "apple-podcasts.png",
+            "youtube.png",
+            "telegram.png",
+        ]:
+            (self.root / "assets" / "icons" / icon_name).write_bytes(b"png")
+        (self.root / "assets" / "icons" / ".DS_Store").write_bytes(b"local")
         (self.root / "index.html").write_text("<!doctype html>\n<title>Test</title>\n")
         (self.root / "style.css").write_text("body { color: #111; }\n")
         (self.dist / "stale.txt").mkdir(parents=True)
@@ -94,8 +104,14 @@ description: "Рассказ Алексея Катриди."
         self.assertTrue((self.dist / "index.html").is_file())
         self.assertTrue((self.dist / "style.css").is_file())
         self.assertTrue((self.dist / "assets" / "cover-placeholder.svg").is_file())
+        self.assertTrue((self.dist / "assets" / "icons" / "yandex-music.png").is_file())
+        self.assertTrue((self.dist / "assets" / "icons" / "spotify.png").is_file())
+        self.assertTrue((self.dist / "assets" / "icons" / "apple-podcasts.png").is_file())
+        self.assertTrue((self.dist / "assets" / "icons" / "youtube.png").is_file())
+        self.assertTrue((self.dist / "assets" / "icons" / "telegram.png").is_file())
         self.assertTrue((self.dist / "feed.xml").is_file())
         self.assertFalse((self.dist / "stale.txt").exists())
+        self.assertFalse((self.dist / "assets" / "icons" / ".DS_Store").exists())
         self.assertFalse((self.dist / "podcast.yml").exists())
         self.assertFalse((self.dist / "seasons").exists())
         self.assertTrue(any("artwork.url" in warning for warning in warnings))

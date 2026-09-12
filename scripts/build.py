@@ -45,7 +45,11 @@ def copy_static_site() -> None:
             continue
         if not source.is_dir():
             raise BuildError(f"Expected static asset directory: {source}")
-        shutil.copytree(source, DIST_DIR / name)
+        shutil.copytree(
+            source,
+            DIST_DIR / name,
+            ignore=shutil.ignore_patterns(".*"),
+        )
 
 
 def build() -> tuple[int, list[str]]:
