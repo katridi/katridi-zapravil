@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <rect width="1000" height="1000" fill="#e8e4dc"/>
+  <rect x="80" y="80" width="840" height="840" fill="none" stroke="#171717" stroke-width="4"/>
+  <text x="100" y="500" font-family="Arial, Helvetica, sans-serif" font-size="92" font-weight="700" fill="#171717">КАТРИДИ</text>
+  <text x="100" y="610" font-family="Arial, Helvetica, sans-serif" font-size="92" font-weight="700" fill="#171717">ЗАПРАВИЛ</text>
+  <text x="103" y="700" font-family="Arial, Helvetica, sans-serif" font-size="30" fill="#555555">placeholder cover</text>
+</svg>
