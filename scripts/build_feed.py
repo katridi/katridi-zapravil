@@ -19,7 +19,7 @@ Run:
     python3 scripts/build_feed.py
 
 Output:
-    feed.xml
+    feed.xml, or another path passed as the first argument
 """
 
 from __future__ import annotations
@@ -88,6 +88,13 @@ def require(data: dict[str, Any], key: str, source: Path) -> Any:
     return value
 
 
+def require_named(data: dict[str, Any], key: str, label: str, source: Path) -> Any:
+    value = data.get(key)
+    if value is None or value == "":
+        fail(f"{source}: missing required field '{label}'")
+    return value
+
+
 def require_mapping(data: dict[str, Any], key: str, source: Path) -> dict[str, Any]:
     value = require(data, key, source)
     if not isinstance(value, dict):
@@ -142,6 +149,24 @@ def load_podcast_config() -> dict[str, Any]:
             "itunes.explicit",
         ),
     }
+
+
+def collect_warnings(podcast: dict[str, Any]) -> list[str]:
+    warnings = []
+
+    if not podcast["artwork_url"]:
+        warnings.append(
+            "WARNING: podcast.yml artwork.url is empty. "
+            "Set a public JPG/PNG artwork URL before submitting the feed."
+        )
+
+    if not podcast["owner_email"]:
+        warnings.append(
+            "WARNING: podcast.yml owner.email is empty. "
+            "Set an email before platform ownership verification."
+        )
+
+    return warnings
 
 
 def parse_datetime(value: str, source: Path) -> datetime:
@@ -227,7 +252,7 @@ def validate_episode(
         fail(f"{source}: duplicate season/episode S{season:02d}E{episode:02d}")
     seen_numbers.add(number_key)
 
-    episode_type = str(data.get("episode_type", "full")).strip().lower()
+    episode_type = str(require(data, "episode_type", source)).strip().lower()
     if episode_type not in {"full", "trailer", "bonus"}:
         fail(f"{source}: episode_type must be full, trailer, or bonus")
 
@@ -240,11 +265,11 @@ def validate_episode(
     if not isinstance(audio, dict):
         fail(f"{source}: audio must be an object")
 
-    audio_url = str(require(audio, "url", source)).strip()
-    audio_type = str(require(audio, "type", source)).strip()
+    audio_url = str(require_named(audio, "url", "audio.url", source)).strip()
+    audio_type = str(require_named(audio, "type", "audio.type", source)).strip()
 
-    if not audio_url.startswith(("https://", "http://")):
-        fail(f"{source}: audio.url must be an absolute HTTP(S) URL")
+    if not audio_url.startswith("https://"):
+        fail(f"{source}: audio.url must be an absolute HTTPS URL")
 
     description = str(data.get("description", "")).strip()
     author = str(data.get("author", podcast["author"])).strip()
@@ -411,34 +436,33 @@ def indent_xml(tree: ET.ElementTree) -> None:
     ET.indent(tree, space="  ")
 
 
+def write_feed(output_file: Path = OUTPUT_FILE) -> tuple[int, list[str]]:
+    podcast = load_podcast_config()
+    episodes = load_published_episodes(podcast)
+    tree = build_feed(podcast, episodes)
+    indent_xml(tree)
+
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    tree.write(
+        output_file,
+        encoding="utf-8",
+        xml_declaration=True,
+        short_empty_elements=True,
+    )
+
+    return len(episodes), collect_warnings(podcast)
+
+
 def main() -> int:
     try:
-        podcast = load_podcast_config()
-        episodes = load_published_episodes(podcast)
-        tree = build_feed(podcast, episodes)
-        indent_xml(tree)
+        output_file = Path(sys.argv[1]) if len(sys.argv) > 1 else OUTPUT_FILE
+        episode_count, warnings = write_feed(output_file)
 
-        tree.write(
-            OUTPUT_FILE,
-            encoding="utf-8",
-            xml_declaration=True,
-            short_empty_elements=True,
-        )
+        print(f"Generated {output_file}")
+        print(f"Published episodes: {episode_count}")
 
-        print(f"Generated {OUTPUT_FILE}")
-        print(f"Published episodes: {len(episodes)}")
-
-        if not podcast["artwork_url"]:
-            print(
-                "WARNING: podcast.yml artwork.url is empty. "
-                "Set a public JPG/PNG artwork URL before submitting the feed."
-            )
-
-        if not podcast["owner_email"]:
-            print(
-                "WARNING: podcast.yml owner.email is empty. "
-                "Set an email before platform ownership verification."
-            )
+        for warning in warnings:
+            print(warning)
 
         return 0
 

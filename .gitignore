@@ -38,6 +38,7 @@ htmlcov/
 dist/
 build/
 .cache/
+feed.xml
 
 # Temporary files
 *.tmp

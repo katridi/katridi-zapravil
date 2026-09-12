@@ -4,7 +4,8 @@
 
 В этом подкасте мои рассказы звучат голосами разных людей.
 
-Здесь хранятся сайт подкаста, метаданные сезонов и эпизодов и, в дальнейшем, RSS-лента.
+Здесь хранятся сайт подкаста, метаданные сезонов и эпизодов.
+RSS-лента генерируется автоматически при сборке.
 
 ## Архитектура
 
@@ -48,8 +49,14 @@ katridi-zapravil/
 │   └── cover-placeholder.svg
 │
 ├── scripts/
+│   ├── build.py
+│   └── build_feed.py
+│
+├── tests/
 │   └── ...
 │
+├── podcast.yml
+├── requirements.txt
 ├── index.html
 ├── style.css
 ├── README.md
@@ -78,21 +85,26 @@ seasons/
 title: "Щенок"
 
 season: 1
+season_title: "Воспоминания"
 episode: 1
+episode_type: "full"
 
 author: "Алексей Катриди"
 reader: "Сергей Глебкин"
 
 guid: "kz-s01e01"
 
-date: "2026-09-20T09:00:00+03:00"
+status: "draft"
+published_at: null
 
 audio:
-  url: "https://audio.example.com/s01/e01.mp3"
+  url: null
   type: "audio/mpeg"
+  duration: null
+  length: null
 
 description: >
-  Первый рассказ мини-сезона «Воспоминания».
+  Рассказ Алексея Катриди.
   Читает Сергей Глебкин.
 ```
 
@@ -188,12 +200,43 @@ seasons/season-01/episode-02/
    - `guid`;
    - название;
    - описание;
-   - дату;
+   - дату публикации;
    - URL аудио.
-6. Сделать commit и push в `main`.
-7. Проверить сайт и `feed.xml`.
+6. Поменять `status` на `published`, когда выпуск готов.
+7. Сделать commit и push в `main`.
+8. GitHub Actions проверит метаданные, соберёт `dist/` и опубликует сайт через GitHub Pages.
 
 После обновления RSS новый выпуск должен автоматически поступить на подключённые платформы.
+
+## Локальная сборка
+
+Production-сборку можно воспроизвести локально:
+
+```bash
+python3 scripts/build.py
+```
+
+Команда очищает `dist/`, копирует публичные статические файлы и генерирует `dist/feed.xml`.
+
+Тесты запускаются так:
+
+```bash
+python3 -m unittest discover -s tests
+```
+
+`feed.xml` и `dist/` являются сгенерированными файлами и не должны редактироваться вручную.
+
+## GitHub Pages
+
+Публикация настроена через GitHub Actions без коммита сгенерированного `feed.xml` обратно в `main`.
+
+В настройках репозитория нужно выбрать:
+
+```text
+Settings → Pages → Build and deployment → Source → GitHub Actions
+```
+
+После этого push в `main` будет запускать проверку, сборку и деплой Pages artifact из `dist/`.
 
 ## Важные правила
 
