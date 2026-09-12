@@ -27,16 +27,26 @@ Do not use titles as stable identifiers.
 ## Current Architecture
 
 ```text
-GitHub repository
+podcast.yml
++
+seasons/**/episode.yml
++
+static site source
+        ↓
+Python build
+        ↓
+dist/
+        ↓
+GitHub Actions
         ↓
 GitHub Pages
-        ↓
-Website + future RSS feed
 
 Cloudflare R2
         ↓
 Podcast audio files
 ```
+
+RSS is part of the production build.
 
 The long-term RSS feed may be distributed to:
 
@@ -79,6 +89,7 @@ The intended structure is:
 
 ```text
 /
+├── podcast.yml
 ├── seasons/
 │   ├── season-01/
 │   │   ├── episode-01/
@@ -93,16 +104,31 @@ The intended structure is:
 │   └── ...
 │
 ├── scripts/
+│   ├── build.py
+│   └── build_feed.py
+│
+├── tests/
 │   └── ...
+│
+├── .github/
+│   └── workflows/
+│       └── pages.yml
 │
 ├── index.html
 ├── style.css
+├── requirements.txt
 ├── README.md
 ├── AGENTS.md
 └── .gitignore
 ```
 
 Do not create abstractions or directories before they are needed.
+
+`dist/` is generated build output and is not the source of truth.
+
+`feed.xml` is generated during build and should not be edited manually.
+
+Podcast MP3 files are not stored in GitHub.
 
 ## Season and Episode Naming
 
@@ -139,21 +165,26 @@ Example:
 title: "Щенок"
 
 season: 1
+season_title: "Воспоминания"
 episode: 1
+episode_type: "full"
 
 author: "Алексей Катриди"
 reader: "Сергей Глебкин"
 
 guid: "kz-s01e01"
 
-date: "2026-09-20T09:00:00+03:00"
+status: "draft"
+published_at: null
 
 audio:
-  url: "https://audio.example.com/s01/e01.mp3"
+  url: null
   type: "audio/mpeg"
+  duration: null
+  length: null
 
 description: >
-  Первый рассказ мини-сезона «Воспоминания».
+  Рассказ Алексея Катриди.
   Читает Сергей Глебкин.
 ```
 
@@ -166,6 +197,24 @@ season
 episode
 guid
 ```
+
+Draft episodes may have:
+
+```yaml
+published_at: null
+audio:
+  url: null
+```
+
+Only episodes with `status: "published"` appear in RSS.
+
+Published episodes require valid `published_at` and `audio.url`.
+
+`published_at` must include a timezone offset.
+
+`audio.length` is the audio file size in bytes. If `audio.length` is absent for a published episode, the build may obtain it with an HTTP `HEAD` request. Do not download the full MP3 to calculate length.
+
+Episode identity is based on `season`, `episode`, and `guid`, not on `title`.
 
 ## GUID Rules
 
@@ -269,6 +318,28 @@ https://audio.example.com/s01/e02.mp3
 
 Do not include story titles in permanent audio URLs unless explicitly requested.
 
+## Podcast Metadata
+
+Show-level metadata lives in:
+
+```text
+podcast.yml
+```
+
+`podcast.yml` is the source of truth for podcast title, description, language, author, site URL, feed URL, artwork metadata, owner metadata, iTunes category, explicit flag, and platform distribution URLs.
+
+The current iTunes metadata shape is:
+
+```yaml
+itunes:
+  category: "Fiction"
+  explicit: false
+```
+
+Do not move `itunes.category` or `itunes.explicit` to top-level fields without a real architectural reason.
+
+`distribution` is website/project metadata. Do not automatically turn `distribution` values into RSS tags.
+
 ## Artwork
 
 Main podcast artwork target:
@@ -302,7 +373,7 @@ The visual direction should remain restrained and editorial.
 
 ## RSS
 
-The project may eventually generate its own RSS feed.
+The project generates its own RSS feed during the production build.
 
 Target compatibility:
 
@@ -325,36 +396,82 @@ Do not manually modify generated RSS once a generator becomes the source of trut
 
 ## Publishing Model
 
-A typical new episode should eventually require only:
+A typical new episode should require:
 
-1. upload MP3 to R2;
-2. create:
+1. upload MP3 to audio hosting;
+2. create or edit:
 
 ```text
 seasons/season-XX/episode-YY/episode.yml
 ```
 
-3. commit;
-4. push to `main`;
-5. let automation rebuild the website and RSS.
+3. keep `status: "draft"` while preparing;
+4. fill final metadata and audio URL;
+5. change `status` to `published` when ready;
+6. commit;
+7. push to `main`;
+8. let GitHub Actions validate metadata, build `dist/`, and deploy GitHub Pages;
+9. let podcast platforms later poll the public RSS feed.
+
+Platforms do not receive episodes via a separate API push from this repository workflow.
 
 Do not make publishing depend on manually editing multiple duplicated metadata files.
 
 ## GitHub Pages
 
-The site is published from GitHub.
+GitHub Pages uses GitHub Actions-based deployment:
 
-Keep deployment simple.
-
-A normal update should remain approximately:
-
-```bash
-git add .
-git commit -m "Describe the change"
-git push origin main
+```text
+Settings
+→ Pages
+→ Source
+→ GitHub Actions
 ```
 
-Do not introduce a custom deployment stack without a concrete reason.
+The deployment artifact is:
+
+```text
+dist/
+```
+
+Do not describe publishing directly from `main` root as the current architecture.
+
+Keep deployment simple and do not introduce a custom deployment stack without a concrete reason.
+
+## GitHub Actions
+
+The publishing pipeline is:
+
+```text
+push to main
+→ tests
+→ build
+→ Pages artifact
+→ deploy
+```
+
+Build or test failure must prevent a new deploy.
+
+The workflow must not commit or push generated `feed.xml` back into `main`.
+
+## Build Model
+
+The canonical production build command is:
+
+```bash
+python3 scripts/build.py
+```
+
+The build must:
+
+- clean `dist/`;
+- validate metadata;
+- generate RSS;
+- copy static site files;
+- copy required assets;
+- create a complete deployable `dist/`.
+
+Generated files must not be edited instead of source files.
 
 ## Secrets
 
@@ -487,6 +604,18 @@ For small HTML/CSS/content changes, proceed directly.
 
 ## Validation
 
+For build and site tasks, completion means checking the whole chain:
+
+```text
+source
+→ tests
+→ build
+→ dist/
+→ deployment configuration
+```
+
+Do not report success solely because source files were edited.
+
 ### Website changes
 
 Check:
@@ -535,3 +664,121 @@ Check:
 ## Priority
 
 When choosing between a clever solution and a boring, portable, understandable solution, choose the boring one.
+
+
+## Source of truth and deployment parity
+
+The repository source files are the source of truth.
+
+For the website, the intended local source version is authoritative unless the user explicitly requests a redesign.
+
+If the local version and the deployed GitHub Pages version differ:
+
+1. do not redesign the local UI;
+2. inspect the source files;
+3. inspect the build output;
+4. inspect the GitHub Actions workflow;
+5. identify where the divergence occurs;
+6. fix the build/deploy pipeline rather than changing the intended design.
+
+The deployment pipeline is:
+
+source files
+→ build
+→ dist/
+→ GitHub Pages artifact
+→ production site
+
+`dist/` is generated output, not the primary editing target.
+
+Do not manually patch generated files as a substitute for fixing their source or generator.
+
+
+## UI change discipline
+
+Preserve existing layout, typography, spacing, wording, and visual hierarchy unless the task explicitly asks to change them.
+
+A narrowly scoped UI request must not become a redesign.
+
+Examples:
+
+- adding one Telegram link must not change the layout of unrelated platform buttons;
+- replacing one asset must not change typography;
+- fixing production deployment must not change the intended local UI;
+- changing link behavior must not change editorial copy.
+
+When screenshots or an existing local implementation are provided as the desired result, treat them as the visual source of truth.
+
+Do not "improve", simplify, modernize, or normalize the design unless explicitly requested.
+
+
+## Static assets
+
+Before referencing an asset in HTML or CSS, verify that the file actually exists in the repository.
+
+Before finishing a task involving assets:
+
+- verify the expected file path;
+- verify filename casing;
+- verify that the file is tracked by Git;
+- verify that the build copies it into `dist/`;
+- verify that the generated HTML points to the deployed path.
+
+Do not silently substitute:
+
+- text for a missing image;
+- another image for a missing image;
+- an externally downloaded asset;
+- an icon library.
+
+Do not crop, recolor, stretch, convert, or redraw supplied brand assets unless explicitly requested.
+
+Preserve image aspect ratio.
+
+
+## Platform links
+
+Platform URLs live in `podcast.yml` under `distribution`.
+
+Example:
+
+```yaml
+distribution:
+  yandex_music: null
+  spotify: null
+  apple_podcasts: null
+  youtube: null
+  telegram: "https://t.me/katridi_writes"
+```
+
+The current intended homepage UI is:
+
+```text
+[ Яндекс Музыка ] [ Spotify ]
+[ Apple Podcasts ] [ YouTube ]
+
+[ Telegram icon  Читать Катриди заправил ]
+```
+
+Rules:
+
+- Yandex Music, Spotify, Apple Podcasts, and YouTube are text-only controls;
+- those four controls use the current 2x2 layout;
+- do not add icons to those four services unless explicitly requested;
+- Telegram is a separate full-width row below them;
+- Telegram uses `assets/icons/telegram.png`;
+- Telegram visible text is `Читать Катриди заправил`;
+- Telegram URL is `https://t.me/katridi_writes`;
+- do not move Telegram into the 2x2 grid unless explicitly requested;
+- null distribution URLs must not use `href="#"`.
+
+Treat the current local implementation and screenshots approved by the user as the visual source of truth.
+
+
+## Scope rule
+
+Make the smallest change that fully satisfies the request.
+
+Do not modify adjacent behavior, layout, metadata, or architecture unless the task requires it.
+
+When the requested end state is already correct locally, diagnose why it is not reaching production instead of interpreting the task as a redesign.
