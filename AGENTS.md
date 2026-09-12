@@ -6,36 +6,46 @@ This repository contains the website and publishing infrastructure for the Russi
 
 The podcast consists of original stories by Alexey Katridi, read by different guest voices.
 
-The project is intentionally lightweight and should remain easy to understand, maintain, and migrate.
+The project is intentionally lightweight, portable, and easy to migrate.
+
+## Core Content Model
+
+The primary content hierarchy is:
+
+```text
+Podcast
+└── Season
+    └── Episode
+```
+
+The filesystem, URLs, GUID conventions, and audio paths must be based on **season and episode numbers**, not story titles.
+
+Story titles are editorial metadata only.
+
+Do not use titles as stable identifiers.
 
 ## Current Architecture
-
-The repository is public.
-
-The website is a static site published with GitHub Pages.
-
-Current publishing model:
 
 ```text
 GitHub repository
         ↓
 GitHub Pages
         ↓
-Podcast website
+Website + future RSS feed
 
 Cloudflare R2
         ↓
 Podcast audio files
 ```
 
-The long-term architecture may also include a self-generated podcast RSS feed distributed to:
+The long-term RSS feed may be distributed to:
 
 - Yandex Music
 - Spotify
 - Apple Podcasts
 - YouTube / YouTube Music
 
-Do not introduce additional infrastructure unless it is clearly necessary.
+Do not introduce additional infrastructure unless clearly necessary.
 
 ## Core Principles
 
@@ -44,78 +54,90 @@ Prefer:
 - static files;
 - simple HTML and CSS;
 - minimal JavaScript;
-- explicit configuration;
-- portable formats;
 - standard RSS;
-- infrastructure that can be migrated easily;
-- solutions that remain understandable without specialized tooling.
+- YAML for structured metadata;
+- small Python scripts where automation is needed;
+- portable formats;
+- predictable URLs;
+- infrastructure that is easy to migrate.
 
-Avoid unnecessary frameworks, databases, backend services, package managers, build systems, or third-party dependencies.
+Avoid unnecessary:
 
-If something can be implemented cleanly with plain HTML, CSS, YAML, and a small Python script, prefer that approach.
+- frontend frameworks;
+- databases;
+- backend services;
+- package managers;
+- build systems;
+- third-party dependencies;
+- usage-based cloud services.
+
+If a task can be solved cleanly with HTML, CSS, YAML, and a small Python script, prefer that solution.
 
 ## Repository Structure
 
-The intended structure is approximately:
+The intended structure is:
 
 ```text
 /
-├── index.html
-├── style.css
+├── seasons/
+│   ├── season-01/
+│   │   ├── episode-01/
+│   │   │   └── episode.yml
+│   │   ├── episode-02/
+│   │   │   └── episode.yml
+│   │   └── ...
+│   └── season-02/
+│       └── ...
+│
 ├── assets/
 │   └── ...
-├── episodes/
-│   └── ...
+│
 ├── scripts/
 │   └── ...
+│
+├── index.html
+├── style.css
 ├── README.md
 ├── AGENTS.md
 └── .gitignore
 ```
 
-Not all directories may exist yet.
+Do not create abstractions or directories before they are needed.
 
-Do not create directories or abstractions before they are needed.
+## Season and Episode Naming
 
-## Website
+Directories must use numeric identifiers:
 
-The website is static and should work correctly on GitHub Pages.
+```text
+season-01/
+episode-01/
+```
 
-Requirements:
+Do not use:
 
-- responsive layout;
-- readable on mobile;
-- no required JavaScript for basic navigation or content;
-- no external framework unless explicitly requested;
-- use relative paths where appropriate so GitHub Pages deployment continues to work;
-- preserve good semantic HTML;
-- maintain accessible contrast and labels;
-- avoid unnecessary animations or visual effects.
+```text
+shchenok/
+puppy/
+first-story/
+```
 
-The visual style should remain restrained and editorial rather than looking like a generic SaaS landing page.
+as stable filesystem identifiers.
 
-## Podcast Content
-
-The podcast language is Russian.
-
-Repository documentation and developer-facing instructions may be written in English or Russian.
-
-Public-facing podcast titles, descriptions, episode names, reader names, and other editorial content should preserve the original Russian spelling.
-
-Do not translate podcast content unless explicitly requested.
+Story titles may change. Season and episode identifiers should remain stable.
 
 ## Episode Metadata
 
-Eventually, episode metadata may be stored as YAML files under:
+Each episode should eventually have one canonical metadata file:
 
 ```text
-episodes/
+seasons/season-01/episode-01/episode.yml
 ```
 
-A possible episode structure:
+Example:
 
 ```yaml
 title: "Щенок"
+
 season: 1
 episode: 1
 
@@ -127,29 +149,72 @@ guid: "kz-s01e01"
 date: "2026-09-20T09:00:00+03:00"
 
 audio:
-  url: "https://audio.example.com/s01/s01e01-shchenok.mp3"
+  url: "https://audio.example.com/s01/e01.mp3"
   type: "audio/mpeg"
 
 description: >
-  Рассказ Алексея Катриди.
+  Первый рассказ мини-сезона «Воспоминания».
   Читает Сергей Глебкин.
 ```
 
-### GUID Rule
+The title is editorial content.
 
-Once an episode is publicly released, its GUID is permanent.
+The following are stable identifiers:
 
-Never change the GUID of a published episode.
+```text
+season
+episode
+guid
+```
 
-Do not automatically regenerate GUIDs from titles, filenames, dates, or URLs.
+## GUID Rules
 
-Changing a published GUID may cause podcast platforms to interpret an existing episode as a new episode.
+Published GUIDs are permanent.
+
+Preferred convention:
+
+```text
+kz-s01e01
+kz-s01e02
+kz-s02e01
+```
+
+Never regenerate a published GUID because of:
+
+- a title change;
+- a filename change;
+- a publication-date change;
+- an audio URL change;
+- a website redesign.
+
+Changing a published GUID may cause podcast platforms to treat an existing episode as a new episode.
+
+## Episode URLs
+
+Preferred canonical website URLs:
+
+```text
+/s01/e01/
+/s01/e02/
+/s02/e01/
+```
+
+Do not base permanent URLs on story titles.
+
+Avoid:
+
+```text
+/episodes/shchenok/
+/stories/shchenok/
+```
+
+for canonical episode identity.
+
+A title may still be displayed in page headings, metadata, SEO fields, and navigation.
 
 ## Audio
 
-Do not store podcast audio files in GitHub.
-
-The `.gitignore` intentionally excludes common audio formats.
+Do not store podcast audio in GitHub.
 
 Archive master:
 
@@ -171,9 +236,38 @@ CBR 192 kbps
 
 The 192 kbps value is a project preference, not a universal platform requirement.
 
-Audio files should eventually be served from Cloudflare R2 or another dedicated audio host.
+Do not silently:
 
-Do not silently transcode, normalize, resample, or otherwise modify podcast audio.
+- transcode;
+- normalize;
+- resample;
+- convert stereo/mono;
+- alter loudness;
+- modify metadata in a way that affects the audio pipeline.
+
+## Audio Storage Structure
+
+Preferred Cloudflare R2 structure:
+
+```text
+s01/
+├── e01.mp3
+├── e02.mp3
+└── e03.mp3
+
+s02/
+├── e01.mp3
+└── ...
+```
+
+Preferred URLs:
+
+```text
+https://audio.example.com/s01/e01.mp3
+https://audio.example.com/s01/e02.mp3
+```
+
+Do not include story titles in permanent audio URLs unless explicitly requested.
 
 ## Artwork
 
@@ -185,40 +279,74 @@ JPG or PNG
 no transparency
 ```
 
+Placeholder artwork may be used during development.
+
 Do not replace or modify official artwork unless explicitly requested.
 
-Placeholder artwork may be used during development but should be clearly identifiable as a placeholder.
+## Website
+
+The website is static and must remain compatible with GitHub Pages.
+
+Requirements:
+
+- responsive;
+- readable on mobile;
+- semantic HTML;
+- basic navigation must work without JavaScript;
+- avoid unnecessary animations;
+- avoid generic SaaS-style visual patterns;
+- use relative paths where appropriate;
+- preserve stable episode URLs.
+
+The visual direction should remain restrained and editorial.
 
 ## RSS
 
 The project may eventually generate its own RSS feed.
 
-When working on RSS, prioritize compatibility with:
+Target compatibility:
 
 1. Yandex Music
 2. Spotify
 3. Apple Podcasts
 4. YouTube / YouTube Music
 
-The RSS feed must remain standards-based and portable.
-
-Important rules:
+RSS rules:
 
 - every published episode must have a stable GUID;
-- enclosure URLs must be publicly accessible;
-- published episode URLs should not change unnecessarily;
-- preserve publication dates;
-- preserve metadata when rebuilding the feed;
+- enclosure URLs must be public;
+- publication dates must be preserved;
+- episode ordering must remain correct;
 - RSS must be accessible without authentication;
-- do not introduce platform-specific behavior that breaks standard RSS readers.
+- use standard podcast RSS conventions;
+- avoid proprietary platform-specific behavior when a standard alternative exists.
 
-Do not manually edit generated RSS if a generator becomes the source of truth.
+Do not manually modify generated RSS once a generator becomes the source of truth.
 
-## Deployment
+## Publishing Model
 
-GitHub Pages currently deploys the website from the `main` branch.
+A typical new episode should eventually require only:
 
-A normal website update should require only:
+1. upload MP3 to R2;
+2. create:
+
+```text
+seasons/season-XX/episode-YY/episode.yml
+```
+
+3. commit;
+4. push to `main`;
+5. let automation rebuild the website and RSS.
+
+Do not make publishing depend on manually editing multiple duplicated metadata files.
+
+## GitHub Pages
+
+The site is published from GitHub.
+
+Keep deployment simple.
+
+A normal update should remain approximately:
 
 ```bash
 git add .
@@ -226,11 +354,9 @@ git commit -m "Describe the change"
 git push origin main
 ```
 
-Do not introduce a custom deployment system unless there is a concrete need.
+Do not introduce a custom deployment stack without a concrete reason.
 
-If GitHub Actions are later added, keep workflows small and understandable.
-
-## Secrets and Credentials
+## Secrets
 
 Never commit:
 
@@ -239,68 +365,88 @@ Never commit:
 - passwords;
 - private keys;
 - billing credentials;
-- `.env` files containing secrets.
+- secret `.env` values.
 
-Use GitHub Secrets if automation later requires credentials.
+Use GitHub Secrets if automation requires credentials.
 
-Never print secrets into generated files, logs, HTML, RSS, or GitHub Actions output.
+Never expose secrets in:
+
+- HTML;
+- RSS;
+- logs;
+- GitHub Actions output;
+- generated files.
 
 ## Cloudflare
 
-Cloudflare R2 may eventually host public podcast audio.
+Cloudflare R2 may host public audio.
 
-The preferred design is deliberately simple:
+Preferred architecture:
 
 ```text
 Custom domain
      ↓
 Cloudflare cache
      ↓
-R2 Standard bucket
+R2 Standard
 ```
 
-Avoid introducing Workers, D1, KV, Queues, R2 SQL, or other usage-based Cloudflare products unless explicitly required.
+Avoid introducing:
 
-The goal is to minimize both operational complexity and unexpected usage-based billing.
+- Workers;
+- D1;
+- KV;
+- Queues;
+- R2 SQL;
+- other usage-based Cloudflare services
 
-Do not expose a development `r2.dev` endpoint as the permanent production audio URL.
+unless explicitly required.
+
+Do not use `r2.dev` as the permanent production audio URL.
 
 ## Cost Awareness
 
 This is an independent podcast project.
 
-Prefer solutions with:
+Prefer:
 
 - predictable costs;
 - free static hosting where appropriate;
 - minimal recurring infrastructure;
-- no unnecessary SaaS subscriptions;
-- no usage-based services unless their billing behavior is understood.
+- no unnecessary subscriptions;
+- no unnecessary usage-based services.
 
 Before introducing a paid dependency, explain:
 
 1. why it is needed;
-2. its recurring cost;
-3. whether pricing is usage-based;
-4. whether there is a hard spending limit;
-5. how difficult it would be to remove later.
+2. recurring cost;
+3. usage-based costs;
+4. whether a hard spending cap exists;
+5. migration difficulty.
 
 ## Migration Safety
 
-The project should remain easy to migrate to a managed podcast host such as mave+, Castos, Captivate, or another standard RSS host.
+The system must remain easy to migrate to a managed podcast host.
 
-Do not design the system in a way that prevents future migration.
+Possible future hosts include:
 
-Important migration invariants:
+- mave+;
+- Castos;
+- Captivate;
+- other standards-based podcast hosts.
+
+Migration invariants:
 
 - preserve episode GUIDs;
-- preserve original masters;
+- preserve original audio masters;
 - retain control over the project domain;
 - use standard RSS;
-- keep episode metadata in portable files;
-- avoid proprietary metadata when a standard alternative exists.
+- keep metadata portable;
+- maintain season/episode numbering;
+- avoid title-based identifiers;
+- avoid unnecessary proprietary metadata.
 
-If the RSS URL ever changes, use a permanent HTTP 301 redirect where appropriate.
+If the RSS URL changes, use a permanent HTTP `301` redirect where appropriate.
 
 ## Git Practices
 
@@ -309,18 +455,18 @@ Make small, focused changes.
 Before committing:
 
 - inspect `git status`;
-- do not include generated junk or local files;
-- do not commit audio files;
+- do not commit audio;
 - do not commit secrets;
+- do not include local/generated junk;
 - avoid unrelated formatting changes.
 
 Use descriptive commit messages, for example:
 
 ```text
+Add season and episode structure
+Add metadata for season 1 episode 1
 Add initial podcast homepage
-Add episode metadata structure
-Generate RSS feed from episode YAML
-Update podcast artwork
+Generate RSS from episode metadata
 Add platform links
 ```
 
@@ -328,20 +474,18 @@ Do not rewrite published Git history unless explicitly requested.
 
 ## Change Policy
 
-Before making a significant architectural change, first explain:
+Before significant architectural changes, explain:
 
-- what problem it solves;
-- what new dependency it introduces;
-- whether it affects GitHub Pages;
-- whether it affects podcast RSS compatibility;
-- whether it changes ongoing costs;
-- whether it makes future migration harder.
+- what problem is being solved;
+- new dependencies;
+- GitHub Pages impact;
+- RSS compatibility impact;
+- cost impact;
+- migration impact.
 
 For small HTML/CSS/content changes, proceed directly.
 
 ## Validation
-
-Before considering a change complete:
 
 ### Website changes
 
@@ -351,7 +495,21 @@ Check:
 - mobile layout;
 - relative URLs;
 - missing assets;
-- obvious accessibility issues.
+- stable canonical URLs;
+- accessibility basics.
+
+### Episode metadata changes
+
+Check:
+
+- season number;
+- episode number;
+- stable GUID;
+- audio URL;
+- publication date;
+- title;
+- reader;
+- description.
 
 ### RSS changes
 
@@ -359,21 +517,21 @@ Check:
 
 - valid XML;
 - required channel metadata;
-- unique and stable episode GUIDs;
-- valid enclosure URLs;
+- unique and stable GUIDs;
+- correct enclosure URLs;
 - correct MIME types;
-- correct publication dates;
-- correct episode ordering.
+- publication dates;
+- episode ordering.
 
 ### Infrastructure changes
 
 Check:
 
-- no secrets were introduced;
-- no unexpected paid service was enabled;
-- deployment remains reproducible;
+- no secrets;
+- no unexpected paid services;
+- reproducible deployment;
 - migration remains possible.
 
 ## Priority
 
-When there is a choice between a clever solution and a boring, portable, understandable solution, choose the boring one.
+When choosing between a clever solution and a boring, portable, understandable solution, choose the boring one.
