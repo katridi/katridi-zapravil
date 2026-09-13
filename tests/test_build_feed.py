@@ -144,6 +144,36 @@ description: "Рассказ Алексея Катриди."
         self.assertNotIn("<itunes:image", xml)
         self.assertNotIn("<itunes:owner", xml)
 
+    def test_populated_artwork_metadata_generates_rss_image_tags(self) -> None:
+        artwork_url = "https://katridi.github.io/katridi-zapravil/assets/cover.jpg"
+        self.module.PODCAST_FILE.write_text(
+            self.module.PODCAST_FILE.read_text(encoding="utf-8").replace(
+                "  url: null",
+                f'  url: "{artwork_url}"',
+            ),
+            encoding="utf-8",
+        )
+
+        podcast = self.module.load_podcast_config()
+        tree = self.module.build_feed(podcast, [])
+        root = tree.getroot()
+        xml = ET.tostring(root, encoding="unicode")
+        channel = root.find("channel")
+        self.assertIsNotNone(channel)
+
+        itunes_images = root.findall(
+            "./channel/{http://www.itunes.com/dtds/podcast-1.0.dtd}image"
+        )
+        self.assertEqual(len(itunes_images), 1)
+        self.assertEqual(itunes_images[0].get("href"), artwork_url)
+
+        rss_images = root.findall("./channel/image")
+        self.assertEqual(len(rss_images), 1)
+        self.assertEqual(rss_images[0].findtext("url"), artwork_url)
+
+        self.assertNotIn('href=""', xml)
+        self.assertNotIn("<url />", xml)
+
     def test_published_episode_uses_head_when_audio_length_is_missing(self) -> None:
         self.write_episode(1, 1, "kz-s01e01", audio_length=None)
 

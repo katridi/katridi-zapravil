@@ -10,7 +10,7 @@ site_url: "https://katridi.github.io/katridi-zapravil/"
 feed_url: "https://katridi.github.io/katridi-zapravil/feed.xml"
 
 artwork:
-  url: null
+  url: "https://katridi.github.io/katridi-zapravil/assets/cover.jpg"
   width: 3000
   height: 3000
 

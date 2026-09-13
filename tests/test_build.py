@@ -35,10 +35,7 @@ class BuildTest(unittest.TestCase):
         self.module.build_feed.OUTPUT_FILE = self.root / "feed.xml"
 
         (self.root / "assets").mkdir()
-        (self.root / "assets" / "cover-placeholder.svg").write_text(
-            "<svg></svg>",
-            encoding="utf-8",
-        )
+        (self.root / "assets" / "cover.jpg").write_bytes(b"jpg")
         (self.root / "assets" / "icons").mkdir()
         for icon_name in [
             "yandex-music.png",
@@ -103,7 +100,7 @@ description: "Рассказ Алексея Катриди."
         self.assertEqual(episode_count, 0)
         self.assertTrue((self.dist / "index.html").is_file())
         self.assertTrue((self.dist / "style.css").is_file())
-        self.assertTrue((self.dist / "assets" / "cover-placeholder.svg").is_file())
+        self.assertTrue((self.dist / "assets" / "cover.jpg").is_file())
         self.assertTrue((self.dist / "assets" / "icons" / "yandex-music.png").is_file())
         self.assertTrue((self.dist / "assets" / "icons" / "spotify.png").is_file())
         self.assertTrue((self.dist / "assets" / "icons" / "apple-podcasts.png").is_file())
