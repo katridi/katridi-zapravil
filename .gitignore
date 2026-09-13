@@ -38,6 +38,7 @@ htmlcov/
 dist/
 build/
 .cache/
+.preview/
 feed.xml
 
 # Temporary files

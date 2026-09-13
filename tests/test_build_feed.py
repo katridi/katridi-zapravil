@@ -51,6 +51,9 @@ owner:
 itunes:
   category: "Fiction"
   explicit: false
+distribution:
+  telegram: "https://t.me/katridi_writes"
+  empty: null
 """,
             encoding="utf-8",
         )
@@ -65,6 +68,7 @@ itunes:
         published_at: str = "2026-09-20T09:00:00+03:00",
         audio_url: str | None = None,
         audio_length: int | None = 12345,
+        show_notes: str = "",
     ) -> None:
         if published_at is None:
             published_at_yaml = "null"
@@ -102,6 +106,7 @@ audio:
   duration: "00:10:00"
   length: {audio_length_yaml}
 description: "Рассказ Алексея Катриди."
+{show_notes}
 """,
             encoding="utf-8",
         )
@@ -251,6 +256,244 @@ description: "Рассказ Алексея Катриди."
         podcast = self.module.load_podcast_config()
         with self.assertRaisesRegex(self.module.FeedError, "absolute HTTPS URL"):
             self.module.load_published_episodes(podcast)
+
+    def test_show_notes_missing_omits_content_encoded(self) -> None:
+        self.write_episode(1, 1, "kz-s01e01")
+
+        podcast = self.module.load_podcast_config()
+        episodes = self.module.load_published_episodes(podcast)
+        xml = ET.tostring(self.module.build_feed(podcast, episodes).getroot(), encoding="unicode")
+
+        self.assertNotIn("content:encoded", xml)
+
+    def test_show_notes_disabled_omits_content_encoded(self) -> None:
+        self.write_episode(
+            1,
+            1,
+            "kz-s01e01",
+            show_notes="""show_notes:
+  enabled: false
+""",
+        )
+
+        podcast = self.module.load_podcast_config()
+        episodes = self.module.load_published_episodes(podcast)
+        xml = ET.tostring(self.module.build_feed(podcast, episodes).getroot(), encoding="unicode")
+
+        self.assertNotIn("content:encoded", xml)
+
+    def test_show_notes_include_description_renders_escaped_paragraph(self) -> None:
+        self.write_episode(
+            1,
+            1,
+            "kz-s01e01",
+            show_notes="""show_notes:
+  enabled: true
+  include_description: true
+  blocks: []
+""",
+        )
+
+        podcast = self.module.load_podcast_config()
+        episode = self.module.load_published_episodes(podcast)[0]
+
+        self.assertEqual(episode["show_notes_html"], "<p>Рассказ Алексея Катриди.</p>")
+
+    def test_paragraph_block_is_escaped(self) -> None:
+        self.write_episode(
+            1,
+            1,
+            "kz-s01e01",
+            show_notes="""show_notes:
+  enabled: true
+  include_description: false
+  blocks:
+    - type: paragraph
+      text: "<b>Текст</b>"
+""",
+        )
+
+        podcast = self.module.load_podcast_config()
+        episode = self.module.load_published_episodes(podcast)[0]
+
+        self.assertEqual(episode["show_notes_html"], "<p>&lt;b&gt;Текст&lt;/b&gt;</p>")
+
+    def test_telegram_ref_resolves_to_distribution_url(self) -> None:
+        self.write_episode(
+            1,
+            1,
+            "kz-s01e01",
+            show_notes="""show_notes:
+  enabled: true
+  include_description: false
+  blocks:
+    - type: link
+      ref: telegram
+      label: "Telegram «Катриди заправил»"
+""",
+        )
+
+        podcast = self.module.load_podcast_config()
+        episode = self.module.load_published_episodes(podcast)[0]
+
+        self.assertEqual(
+            episode["show_notes_html"],
+            '<p><a href="https://t.me/katridi_writes">Telegram «Катриди заправил»</a></p>',
+        )
+
+    def test_explicit_https_link_renders(self) -> None:
+        self.write_episode(
+            1,
+            1,
+            "kz-s01e01",
+            show_notes="""show_notes:
+  enabled: true
+  include_description: false
+  blocks:
+    - type: link
+      label: "Текстовая версия рассказа"
+      url: "https://example.com/story"
+""",
+        )
+
+        podcast = self.module.load_podcast_config()
+        episode = self.module.load_published_episodes(podcast)[0]
+
+        self.assertEqual(
+            episode["show_notes_html"],
+            '<p><a href="https://example.com/story">Текстовая версия рассказа</a></p>',
+        )
+
+    def test_unknown_ref_fails_validation(self) -> None:
+        self.write_episode(
+            1,
+            1,
+            "kz-s01e01",
+            show_notes="""show_notes:
+  enabled: true
+  blocks:
+    - type: link
+      ref: missing
+      label: "Missing"
+""",
+        )
+
+        with self.assertRaisesRegex(self.module.FeedError, "unknown show_notes link ref"):
+            self.module.load_published_episodes(self.module.load_podcast_config())
+
+    def test_null_distribution_ref_fails_validation(self) -> None:
+        self.write_episode(
+            1,
+            1,
+            "kz-s01e01",
+            show_notes="""show_notes:
+  enabled: true
+  blocks:
+    - type: link
+      ref: empty
+      label: "Empty"
+""",
+        )
+
+        with self.assertRaisesRegex(self.module.FeedError, "null or empty"):
+            self.module.load_published_episodes(self.module.load_podcast_config())
+
+    def test_link_without_label_fails_validation(self) -> None:
+        self.write_episode(
+            1,
+            1,
+            "kz-s01e01",
+            show_notes="""show_notes:
+  enabled: true
+  blocks:
+    - type: link
+      url: "https://example.com/story"
+""",
+        )
+
+        with self.assertRaisesRegex(self.module.FeedError, "label is required"):
+            self.module.load_published_episodes(self.module.load_podcast_config())
+
+    def test_link_with_ref_and_url_fails_validation(self) -> None:
+        self.write_episode(
+            1,
+            1,
+            "kz-s01e01",
+            show_notes="""show_notes:
+  enabled: true
+  blocks:
+    - type: link
+      ref: telegram
+      url: "https://example.com/story"
+      label: "Both"
+""",
+        )
+
+        with self.assertRaisesRegex(self.module.FeedError, "exactly one of ref or url"):
+            self.module.load_published_episodes(self.module.load_podcast_config())
+
+    def test_raw_text_special_characters_are_escaped(self) -> None:
+        self.write_episode(
+            1,
+            1,
+            "kz-s01e01",
+            show_notes="""show_notes:
+  enabled: true
+  blocks:
+    - type: paragraph
+      text: '< > & "'
+""",
+        )
+
+        podcast = self.module.load_podcast_config()
+        episode = self.module.load_published_episodes(podcast)[0]
+
+        self.assertEqual(episode["show_notes_html"], "<p>&lt; &gt; &amp; &quot;</p>")
+
+    def test_rss_description_stays_plain_text_with_content_encoded(self) -> None:
+        self.write_episode(
+            1,
+            1,
+            "kz-s01e01",
+            show_notes="""show_notes:
+  enabled: true
+  include_description: false
+  blocks:
+    - type: paragraph
+      text: "<b>notes</b>"
+""",
+        )
+
+        podcast = self.module.load_podcast_config()
+        episodes = self.module.load_published_episodes(podcast)
+        xml = ET.tostring(self.module.build_feed(podcast, episodes).getroot(), encoding="unicode")
+
+        self.assertIn("<description>Рассказ Алексея Катриди.</description>", xml)
+        self.assertNotIn("<description><p>", xml)
+        self.assertIn("<content:encoded><![CDATA[<p>&lt;b&gt;notes&lt;/b&gt;</p>]]></content:encoded>", xml)
+
+    def test_preview_uses_same_renderer_output_as_rss_episode(self) -> None:
+        self.write_episode(
+            1,
+            1,
+            "kz-s01e01",
+            show_notes="""show_notes:
+  enabled: true
+  include_description: true
+  blocks:
+    - type: link
+      ref: telegram
+      label: "Telegram «Катриди заправил»"
+""",
+        )
+
+        podcast = self.module.load_podcast_config()
+        source = self.module.SEASONS_DIR / "season-01" / "episode-01" / "episode.yml"
+        raw_episode = self.module.load_yaml(source)
+        rss_episode = self.module.load_published_episodes(podcast)[0]
+        preview_html = self.module.render_show_notes_html(raw_episode, podcast, source)
+
+        self.assertEqual(preview_html, rss_episode["show_notes_html"])
 
 
 if __name__ == "__main__":

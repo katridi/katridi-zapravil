@@ -25,6 +25,7 @@ Output:
 from __future__ import annotations
 
 import email.utils
+import html
 import sys
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -63,6 +64,32 @@ ET.register_namespace("content", NS_CONTENT)
 
 class FeedError(Exception):
     pass
+
+
+class CDATA(str):
+    pass
+
+
+_original_serialize_xml = ET._serialize_xml
+
+
+def _serialize_xml_with_cdata(write, elem, qnames, namespaces, short_empty_elements=True, **kwargs):
+    if isinstance(elem.text, CDATA):
+        text = elem.text
+        elem.text = None
+        write(f"<{qnames[elem.tag]}>")
+        write(f"<![CDATA[{text}]]>")
+        for child in elem:
+            ET._serialize_xml(write, child, qnames, namespaces, short_empty_elements=short_empty_elements)
+        write(f"</{qnames[elem.tag]}>")
+        elem.text = text
+        if elem.tail:
+            write(ET._escape_cdata(elem.tail))
+        return
+    _original_serialize_xml(write, elem, qnames, namespaces, short_empty_elements=short_empty_elements)
+
+
+ET._serialize_xml = _serialize_xml_with_cdata
 
 
 def fail(message: str) -> None:
@@ -115,6 +142,15 @@ def optional_text(data: dict[str, Any], key: str) -> str:
     return str(value).strip()
 
 
+def require_optional_mapping(data: dict[str, Any], key: str, source: Path) -> dict[str, Any]:
+    value = data.get(key)
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        fail(f"{source}: '{key}' must be an object")
+    return value
+
+
 def load_podcast_config() -> dict[str, Any]:
     data = load_yaml(PODCAST_FILE)
 
@@ -131,6 +167,7 @@ def load_podcast_config() -> dict[str, Any]:
         fail(f"{PODCAST_FILE}: 'owner' must be an object")
 
     itunes = require_mapping(data, "itunes", PODCAST_FILE)
+    distribution = require_optional_mapping(data, "distribution", PODCAST_FILE)
 
     return {
         "title": str(require(data, "title", PODCAST_FILE)).strip(),
@@ -148,6 +185,7 @@ def load_podcast_config() -> dict[str, Any]:
             PODCAST_FILE,
             "itunes.explicit",
         ),
+        "distribution": distribution,
     }
 
 
@@ -223,6 +261,90 @@ def get_remote_content_length(url: str) -> int:
         fail(f"Invalid Content-Length returned by {url}: {value}")
 
 
+def render_show_notes_html(
+    episode: dict[str, Any],
+    podcast: dict[str, Any],
+    source: Path,
+) -> str | None:
+    show_notes = episode.get("show_notes")
+    if show_notes is None:
+        return None
+    if not isinstance(show_notes, dict):
+        fail(f"{source}: show_notes must be an object")
+
+    enabled = show_notes.get("enabled", False)
+    if not isinstance(enabled, bool):
+        fail(f"{source}: show_notes.enabled must be a YAML boolean")
+    if not enabled:
+        return None
+
+    include_description = show_notes.get("include_description", False)
+    if not isinstance(include_description, bool):
+        fail(f"{source}: show_notes.include_description must be a YAML boolean")
+
+    blocks = show_notes.get("blocks", [])
+    if blocks is None:
+        blocks = []
+    if not isinstance(blocks, list):
+        fail(f"{source}: show_notes.blocks must be a list")
+
+    html_parts: list[str] = []
+    description = str(episode.get("description", "")).strip()
+    if include_description and description:
+        html_parts.append(f"<p>{html.escape(description)}</p>")
+
+    distribution = podcast.get("distribution", {})
+    if not isinstance(distribution, dict):
+        distribution = {}
+
+    for index, block in enumerate(blocks, start=1):
+        if not isinstance(block, dict):
+            fail(f"{source}: show_notes.blocks[{index}] must be an object")
+
+        block_type = block.get("type")
+        if block_type == "paragraph":
+            text = block.get("text")
+            if text is None:
+                fail(f"{source}: show_notes.blocks[{index}].text is required")
+            html_parts.append(f"<p>{html.escape(str(text).strip())}</p>")
+            continue
+
+        if block_type == "link":
+            label = block.get("label")
+            if label is None or str(label).strip() == "":
+                fail(f"{source}: show_notes.blocks[{index}].label is required")
+
+            has_ref = "ref" in block
+            has_url = "url" in block
+            if has_ref == has_url:
+                fail(f"{source}: show_notes.blocks[{index}] must have exactly one of ref or url")
+
+            if has_ref:
+                ref = block.get("ref")
+                if ref is None or str(ref).strip() == "":
+                    fail(f"{source}: show_notes.blocks[{index}].ref must be non-empty")
+                ref_key = str(ref).strip()
+                if ref_key not in distribution:
+                    fail(f"{source}: unknown show_notes link ref '{ref_key}'")
+                url = distribution.get(ref_key)
+                if url is None or str(url).strip() == "":
+                    fail(f"{source}: show_notes link ref '{ref_key}' is null or empty")
+                url = str(url).strip()
+            else:
+                url = str(block.get("url")).strip()
+                if not url.startswith("https://"):
+                    fail(f"{source}: show_notes.blocks[{index}].url must be an absolute HTTPS URL")
+
+            html_parts.append(
+                f'<p><a href="{html.escape(url, quote=True)}">{html.escape(str(label).strip())}</a></p>'
+            )
+            continue
+
+        fail(f"{source}: unsupported show_notes block type '{block_type}'")
+
+    return "\n".join(html_parts)
+
+
 def validate_episode(
     data: dict[str, Any],
     source: Path,
@@ -285,7 +407,7 @@ def validate_episode(
     except (TypeError, ValueError):
         fail(f"{source}: audio.length must be an integer number of bytes")
 
-    return {
+    episode_data = {
         "title": title,
         "season": season,
         "episode": episode,
@@ -299,7 +421,10 @@ def validate_episode(
         "audio_length": length,
         "duration": duration,
         "description": description,
+        "show_notes": data.get("show_notes"),
     }
+    episode_data["show_notes_html"] = render_show_notes_html(episode_data, podcast, source)
+    return episode_data
 
 
 def load_published_episodes(podcast: dict[str, Any]) -> list[dict[str, Any]]:
@@ -404,6 +529,10 @@ def build_feed(podcast: dict[str, Any], episodes: list[dict[str, Any]]) -> ET.El
         description = episode["description"]
         if description:
             add_text(item, "description", description)
+
+        if episode.get("show_notes_html"):
+            content = ET.SubElement(item, f"{{{NS_CONTENT}}}encoded")
+            content.text = CDATA(episode["show_notes_html"])
 
         ET.SubElement(
             item,

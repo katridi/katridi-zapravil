@@ -14,11 +14,20 @@ status: "draft"
 published_at: null
 
 audio:
-  url: null
+  url: "https://pub-ce6f809858c9413880af07cd4a99a4ad.r2.dev/s01/e01.mp3"
   type: "audio/mpeg"
-  duration: null
+  duration: "00:04:16"
   length: null
 
 description: >
   Рассказ Алексея Катриди.
   Читает Сергей Глебкин.
+
+show_notes:
+  enabled: true
+  include_description: true
+
+  blocks:
+    - type: link
+      ref: telegram
+      label: "Telegram «Катриди заправил»"
