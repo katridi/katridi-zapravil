@@ -371,6 +371,55 @@ Requirements:
 
 The visual direction should remain restrained and editorial.
 
+### Homepage source and generated output
+
+The repository-root `index.html` is the editable source template for the homepage.
+
+It may contain build placeholders such as:
+
+```text
+{{EPISODES}}
+```
+
+The root `index.html` is not the final deployed page. Never delete the root template merely because GitHub Pages deploys `dist/`.
+
+The deployable homepage is generated at:
+
+```text
+dist/index.html
+```
+
+by running:
+
+```bash
+python3 scripts/build.py
+```
+
+`dist/index.html` must not contain unresolved placeholders such as `{{EPISODES}}`.
+
+Homepage content should be changed through:
+
+- root `index.html`;
+- `style.css`;
+- `podcast.yml`;
+- `seasons/**/episode.yml`;
+- build/rendering code where appropriate.
+
+Do not edit `dist/index.html` instead of editing the source template or generator.
+
+Generated files in `dist/` are not sources of truth and should remain ignored by Git. Do not commit generated `dist/` files unless the architecture explicitly changes in the future.
+
+To preview the real built homepage locally, run `python3 scripts/build.py` and open `dist/index.html`. The repository-root `index.html` may look incomplete if opened directly because it is a template.
+
+If `{{EPISODES}}` appears in a browser:
+
+1. check whether root `index.html` was opened directly;
+2. check `dist/index.html`;
+3. check the build;
+4. check the GitHub Pages workflow artifact.
+
+Do not "fix" this by removing the placeholder from the source template.
+
 ## RSS
 
 The project generates its own RSS feed during the production build.
@@ -433,6 +482,8 @@ The deployment artifact is:
 ```text
 dist/
 ```
+
+The GitHub Actions workflow must deploy `dist/`, not the repository root.
 
 Do not describe publishing directly from `main` root as the current architecture.
 
@@ -680,6 +731,8 @@ If the local version and the deployed GitHub Pages version differ:
 4. inspect the GitHub Actions workflow;
 5. identify where the divergence occurs;
 6. fix the build/deploy pipeline rather than changing the intended design.
+
+If local source is correct but production differs, diagnose build/deploy parity instead of editing generated files.
 
 The deployment pipeline is:
 

@@ -46,7 +46,10 @@ class BuildTest(unittest.TestCase):
         ]:
             (self.root / "assets" / "icons" / icon_name).write_bytes(b"png")
         (self.root / "assets" / "icons" / ".DS_Store").write_bytes(b"local")
-        (self.root / "index.html").write_text("<!doctype html>\n<title>Test</title>\n")
+        (self.root / "index.html").write_text(
+            "<!doctype html>\n<title>Test</title>\n{{EPISODES}}\n",
+            encoding="utf-8",
+        )
         (self.root / "style.css").write_text("body { color: #111; }\n")
         (self.dist / "stale.txt").mkdir(parents=True)
 
@@ -87,6 +90,7 @@ audio:
   duration: null
   length: null
 description: "Рассказ Алексея Катриди."
+homepage_summary: "Первый рассказ мини-сезона «Воспоминания»"
 """,
             encoding="utf-8",
         )
@@ -116,6 +120,124 @@ description: "Рассказ Алексея Катриди."
 
         tree = ET.parse(self.dist / "feed.xml")
         self.assertEqual(tree.getroot().findall("./channel/item"), [])
+
+    def write_episode(
+        self,
+        season: int,
+        episode: int,
+        *,
+        title: str = "Щенок",
+        reader: str = "Сергей Глебкин",
+        status: str = "draft",
+        published_at: str | None = None,
+        description: str = "Рассказ Алексея Катриди.",
+        homepage_summary: str | None = "Первый рассказ мини-сезона «Воспоминания»",
+    ) -> None:
+        def yaml_quote(value: str) -> str:
+            return "'" + value.replace("'", "''") + "'"
+
+        episode_dir = self.root / "seasons" / f"season-{season:02d}" / f"episode-{episode:02d}"
+        episode_dir.mkdir(parents=True, exist_ok=True)
+        published_yaml = "null" if published_at is None else f'"{published_at}"'
+        summary_yaml = ""
+        if homepage_summary is not None:
+            summary_yaml = f"homepage_summary: {yaml_quote(homepage_summary)}\n"
+
+        (episode_dir / "episode.yml").write_text(
+            f"""title: {yaml_quote(title)}
+season: {season}
+season_title: "Воспоминания"
+episode: {episode}
+episode_type: "full"
+author: "Алексей Катриди"
+reader: {yaml_quote(reader)}
+guid: "kz-s{season:02d}e{episode:02d}"
+status: "{status}"
+published_at: {published_yaml}
+audio:
+  url: "https://audio.example.com/s{season:02d}/e{episode:02d}.mp3"
+  type: "audio/mpeg"
+  duration: "00:04:16"
+  length: 12345
+description: {yaml_quote(description)}
+{summary_yaml}""",
+            encoding="utf-8",
+        )
+
+    def test_homepage_renders_draft_episode_as_soon(self) -> None:
+        self.module.build()
+        html = (self.dist / "index.html").read_text(encoding="utf-8")
+
+        self.assertIn("S01E01", html)
+        self.assertIn("Щенок", html)
+        self.assertIn("Сергей Глебкин", html)
+        self.assertIn("Первый рассказ мини-сезона «Воспоминания»", html)
+        self.assertIn("Скоро", html)
+
+    def test_homepage_renders_published_episode_date(self) -> None:
+        self.write_episode(
+            1,
+            1,
+            status="published",
+            published_at="2026-09-20T09:00:00+03:00",
+        )
+
+        self.module.build()
+        html = (self.dist / "index.html").read_text(encoding="utf-8")
+
+        self.assertIn("20.09.2026", html)
+        self.assertNotIn("09:00:00", html)
+
+    def test_homepage_orders_episodes_by_season_and_episode(self) -> None:
+        self.write_episode(1, 1, title="Первый")
+        self.write_episode(2, 1, title="Третий")
+        self.write_episode(1, 2, title="Второй")
+
+        self.module.build()
+        html = (self.dist / "index.html").read_text(encoding="utf-8")
+
+        self.assertLess(html.index("S01E01"), html.index("S01E02"))
+        self.assertLess(html.index("S01E02"), html.index("S02E01"))
+
+    def test_homepage_escapes_yaml_text(self) -> None:
+        self.write_episode(
+            1,
+            1,
+            title='<Щенок & "друг">',
+            reader='Сергей <Глебкин> & "читатель"',
+            description='Описание < > & "',
+            homepage_summary=None,
+        )
+
+        self.module.build()
+        html = (self.dist / "index.html").read_text(encoding="utf-8")
+
+        self.assertIn("&lt;Щенок &amp; &quot;друг&quot;&gt;", html)
+        self.assertIn("Сергей &lt;Глебкин&gt; &amp; &quot;читатель&quot;", html)
+        self.assertIn("Описание &lt; &gt; &amp; &quot;", html)
+        self.assertNotIn('<Щенок & "друг">', html)
+
+    def test_published_episode_without_published_at_fails_build(self) -> None:
+        self.write_episode(1, 1, status="published", published_at=None)
+
+        with self.assertRaisesRegex(self.module.build_feed.FeedError, "published_at"):
+            self.module.build()
+
+    def test_draft_episode_without_published_at_builds(self) -> None:
+        self.write_episode(1, 1, status="draft", published_at=None)
+
+        episode_count, _warnings = self.module.build()
+        html = (self.dist / "index.html").read_text(encoding="utf-8")
+
+        self.assertEqual(episode_count, 0)
+        self.assertIn("Скоро", html)
+
+    def test_dist_index_contains_generated_episode_markup(self) -> None:
+        self.module.build()
+        html = (self.dist / "index.html").read_text(encoding="utf-8")
+
+        self.assertIn('<article class="episode">', html)
+        self.assertNotIn("{{EPISODES}}", html)
 
 
 if __name__ == "__main__":

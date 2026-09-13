@@ -99,6 +99,15 @@ class StaticSiteTest(unittest.TestCase):
         ]:
             self.assertNotIn(path, html)
 
+    def test_source_index_uses_episode_placeholder(self) -> None:
+        html = (REPO_ROOT / "index.html").read_text(encoding="utf-8")
+
+        self.assertIn("{{EPISODES}}", html)
+        self.assertNotIn("S01E01", html)
+        self.assertNotIn("Щенок", html)
+        self.assertNotIn("Сергей Глебкин", html)
+        self.assertNotIn("Скоро", html)
+
 
 if __name__ == "__main__":
     unittest.main()

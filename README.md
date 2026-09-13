@@ -10,15 +10,17 @@ RSS-лента генерируется автоматически при сбо
 ## Архитектура
 
 ```text
-GitHub
-│
-├── сайт
-├── метаданные сезонов и эпизодов
-└── RSS
+исходные файлы в корне репозитория
++
+YAML-метаданные
+     ↓
+python3 scripts/build.py
+     ↓
+dist/
+     ↓
+GitHub Actions
      ↓
 GitHub Pages
-     ↓
-сайт + feed.xml
 
 Cloudflare R2
      ↓
@@ -216,7 +218,31 @@ Production-сборку можно воспроизвести локально:
 python3 scripts/build.py
 ```
 
-Команда очищает `dist/`, копирует публичные статические файлы и генерирует `dist/feed.xml`.
+Команда очищает `dist/`, рендерит `dist/index.html`, копирует публичные статические файлы и генерирует `dist/feed.xml`.
+
+Файл `index.html` в корне репозитория — это исходный шаблон главной страницы. В нём могут быть build placeholders, например:
+
+```text
+{{EPISODES}}
+```
+
+Это нормально: корневой `index.html` не является финальной опубликованной страницей. Не удаляйте его и не редактируйте вместо него `dist/index.html`.
+
+Файл `dist/index.html` создаётся командой:
+
+```bash
+python3 scripts/build.py
+```
+
+Именно `dist/index.html` является готовой главной страницей для деплоя. В нём не должно оставаться `{{EPISODES}}`.
+
+Чтобы локально посмотреть настоящий собранный сайт, выполните сборку и откройте:
+
+```text
+dist/index.html
+```
+
+Если в браузере виден `{{EPISODES}}`, сначала проверьте, не открыт ли напрямую корневой `index.html`; затем проверьте `dist/index.html`, сборку и Pages artifact в workflow.
 
 Тесты запускаются так:
 
@@ -224,7 +250,9 @@ python3 scripts/build.py
 python3 -m unittest discover -s tests
 ```
 
-`feed.xml` и `dist/` являются сгенерированными файлами и не должны редактироваться вручную.
+Менять содержимое сайта нужно через исходные файлы: корневой `index.html`, `style.css`, `podcast.yml`, `seasons/**/episode.yml` и код сборки, когда это действительно нужно.
+
+`feed.xml` и `dist/` являются сгенерированными файлами и не должны редактироваться вручную. `dist/` остаётся ignored в Git и не должен коммититься, пока архитектура явно не изменится.
 
 ## GitHub Pages
 
@@ -237,6 +265,16 @@ Settings → Pages → Build and deployment → Source → GitHub Actions
 ```
 
 После этого push в `main` будет запускать проверку, сборку и деплой Pages artifact из `dist/`.
+
+GitHub Pages Source сейчас:
+
+```text
+GitHub Actions
+```
+
+Это не режим `Deploy from a branch → main / (root)`.
+
+Workflow должен деплоить `dist/`, а не корень репозитория.
 
 ## Важные правила
 

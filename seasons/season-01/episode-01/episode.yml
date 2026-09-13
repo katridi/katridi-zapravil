@@ -23,6 +23,8 @@ description: >
   Рассказ Алексея Катриди.
   Читает Сергей Глебкин.
 
+homepage_summary: "Первый рассказ мини-сезона «Воспоминания»"
+
 show_notes:
   enabled: true
   include_description: true
