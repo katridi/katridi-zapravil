@@ -10,8 +10,8 @@ reader: "Сергей Глебкин"
 
 guid: "kz-s01e01"
 
-status: "draft"
-published_at: null
+status: "published"
+published_at: "2026-09-15T00:37:00+03:00"
 
 audio:
   url: "https://pub-ce6f809858c9413880af07cd4a99a4ad.r2.dev/s01/e01.mp3"
