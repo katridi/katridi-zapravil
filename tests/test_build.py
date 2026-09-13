@@ -47,7 +47,7 @@ class BuildTest(unittest.TestCase):
             (self.root / "assets" / "icons" / icon_name).write_bytes(b"png")
         (self.root / "assets" / "icons" / ".DS_Store").write_bytes(b"local")
         (self.root / "index.html").write_text(
-            "<!doctype html>\n<title>Test</title>\n{{EPISODES}}\n",
+            "<!doctype html>\n<title>Test</title>\n{{PLATFORMS}}\n{{EPISODES}}\n",
             encoding="utf-8",
         )
         (self.root / "style.css").write_text("body { color: #111; }\n")
@@ -68,6 +68,12 @@ owner:
 itunes:
   category: "Fiction"
   explicit: false
+distribution:
+  yandex_music: null
+  spotify: "https://open.spotify.com/show/test"
+  apple_podcasts: "https://podcasts.apple.com/us/podcast/test/id123"
+  youtube: null
+  telegram: "https://t.me/katridi_writes"
 """,
             encoding="utf-8",
         )
@@ -238,6 +244,18 @@ description: {yaml_quote(description)}
 
         self.assertIn('<article class="episode">', html)
         self.assertNotIn("{{EPISODES}}", html)
+
+    def test_dist_index_renders_distribution_platform_links(self) -> None:
+        self.module.build()
+        html = (self.dist / "index.html").read_text(encoding="utf-8")
+
+        self.assertIn('href="https://open.spotify.com/show/test"', html)
+        self.assertIn('href="https://podcasts.apple.com/us/podcast/test/id123"', html)
+        self.assertIn('href="https://t.me/katridi_writes"', html)
+        self.assertIn('<span class="platform-badge platform-badge-unavailable" aria-label="Яндекс Музыка">Яндекс Музыка</span>', html)
+        self.assertIn('<span class="platform-badge platform-badge-unavailable" aria-label="YouTube Music">YouTube</span>', html)
+        self.assertNotIn('href="#"', html)
+        self.assertNotIn("{{PLATFORMS}}", html)
 
 
 if __name__ == "__main__":

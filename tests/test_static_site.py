@@ -55,41 +55,16 @@ class PlatformParser(HTMLParser):
 
 
 class StaticSiteTest(unittest.TestCase):
-    def test_platform_badges_order_and_links(self) -> None:
-        parser = PlatformParser()
-        parser.feed((REPO_ROOT / "index.html").read_text(encoding="utf-8"))
-
-        self.assertEqual(
-            [item["label"] for item in parser.items],
-            [
-                "Яндекс Музыка",
-                "Spotify",
-                "Apple Podcasts",
-                "YouTube Music",
-                "Telegram",
-            ],
-        )
-        self.assertEqual(parser.items[-1]["label"], "Telegram")
-        self.assertEqual(parser.items[-1]["tag"], "a")
-        self.assertEqual(parser.items[-1]["href"], "https://t.me/katridi_writes")
-        self.assertEqual(parser.items[-1]["target"], "_blank")
-        self.assertEqual(parser.items[-1]["rel"], "noopener noreferrer")
-
-        for item in parser.items[:-1]:
-            self.assertEqual(item["tag"], "span")
-            self.assertEqual(item["href"], "")
-
-        self.assertNotIn("#", parser.hrefs)
-
-    def test_telegram_button_text(self) -> None:
+    def test_source_index_uses_platform_placeholder(self) -> None:
         html = (REPO_ROOT / "index.html").read_text(encoding="utf-8")
 
-        self.assertIn("Читать Катриди заправил", html)
+        self.assertIn("{{PLATFORMS}}", html)
+        self.assertNotIn("https://t.me/katridi_writes", html)
+        self.assertNotIn("https://open.spotify.com", html)
+        self.assertNotIn("https://podcasts.apple.com", html)
 
     def test_only_telegram_asset_path_is_referenced(self) -> None:
         html = (REPO_ROOT / "index.html").read_text(encoding="utf-8")
-
-        self.assertIn("assets/icons/telegram.png", html)
 
         for path in [
             "assets/icons/yandex-music.png",
@@ -103,6 +78,7 @@ class StaticSiteTest(unittest.TestCase):
         html = (REPO_ROOT / "index.html").read_text(encoding="utf-8")
 
         self.assertIn("{{EPISODES}}", html)
+        self.assertIn("{{PLATFORMS}}", html)
         self.assertNotIn("S01E01", html)
         self.assertNotIn("Щенок", html)
         self.assertNotIn("Сергей Глебкин", html)

@@ -23,6 +23,7 @@ DIST_DIR = ROOT / "dist"
 STATIC_FILES = ("index.html", "style.css")
 STATIC_DIRS = ("assets",)
 EPISODES_PLACEHOLDER = "{{EPISODES}}"
+PLATFORMS_PLACEHOLDER = "{{PLATFORMS}}"
 
 
 class BuildError(Exception):
@@ -120,7 +121,45 @@ def render_homepage_episodes(episodes: list[dict[str, Any]]) -> str:
     return "\n\n      ".join(rendered)
 
 
-def render_index_html() -> None:
+def platform_badge(label: str, aria_label: str, url: Any) -> str:
+    if url is None or str(url).strip() == "":
+        return (
+            f'<span class="platform-badge platform-badge-unavailable" '
+            f'aria-label="{html.escape(aria_label, quote=True)}">{html.escape(label)}</span>'
+        )
+
+    href = html.escape(str(url).strip(), quote=True)
+    return (
+        f'<a class="platform-badge" href="{href}" '
+        f'aria-label="{html.escape(aria_label, quote=True)}" '
+        f'target="_blank" rel="noopener noreferrer">{html.escape(label)}</a>'
+    )
+
+
+def render_platforms(podcast: dict[str, Any]) -> str:
+    distribution = podcast.get("distribution", {})
+    if not isinstance(distribution, dict):
+        distribution = {}
+
+    telegram_url = distribution.get("telegram")
+    if telegram_url is None or str(telegram_url).strip() == "":
+        raise BuildError("podcast.yml distribution.telegram is required for the homepage")
+
+    return f"""<div class="platforms" aria-label="Платформы">
+          <div class="platform-grid">
+            {platform_badge("Яндекс Музыка", "Яндекс Музыка", distribution.get("yandex_music"))}
+            {platform_badge("Spotify", "Spotify", distribution.get("spotify"))}
+            {platform_badge("Apple Podcasts", "Apple Podcasts", distribution.get("apple_podcasts"))}
+            {platform_badge("YouTube", "YouTube Music", distribution.get("youtube"))}
+          </div>
+          <a class="telegram-link" href="{html.escape(str(telegram_url).strip(), quote=True)}" aria-label="Telegram" target="_blank" rel="noopener noreferrer">
+            <img class="platform-icon-square" src="assets/icons/telegram.png" alt="">
+            <span>Читать Катриди заправил</span>
+          </a>
+        </div>"""
+
+
+def render_index_html(podcast: dict[str, Any]) -> None:
     source = ROOT / "index.html"
     if not source.is_file():
         raise BuildError(f"Missing required static file: {source}")
@@ -128,16 +167,22 @@ def render_index_html() -> None:
     template = source.read_text(encoding="utf-8")
     if EPISODES_PLACEHOLDER not in template:
         raise BuildError(f"Missing {EPISODES_PLACEHOLDER} placeholder in {source}")
+    if PLATFORMS_PLACEHOLDER not in template:
+        raise BuildError(f"Missing {PLATFORMS_PLACEHOLDER} placeholder in {source}")
 
     html_output = template.replace(
         EPISODES_PLACEHOLDER,
         render_homepage_episodes(load_homepage_episodes()),
     )
+    html_output = html_output.replace(
+        PLATFORMS_PLACEHOLDER,
+        render_platforms(podcast),
+    )
     (DIST_DIR / "index.html").write_text(html_output, encoding="utf-8")
 
 
-def copy_static_site() -> None:
-    render_index_html()
+def copy_static_site(podcast: dict[str, Any]) -> None:
+    render_index_html(podcast)
 
     for name in STATIC_FILES:
         if name == "index.html":
@@ -178,7 +223,7 @@ def build() -> tuple[int, list[str]]:
     clean_dist()
     podcast = build_feed.load_podcast_config()
     published_episodes = build_feed.load_published_episodes(podcast)
-    copy_static_site()
+    copy_static_site(podcast)
     write_feed_from_loaded(podcast, published_episodes)
     return len(published_episodes), build_feed.collect_warnings(podcast)
 
