@@ -48,7 +48,7 @@ katridi-zapravil/
 │       └── ...
 │
 ├── assets/
-│   └── cover-placeholder.svg
+│   └── cover.jpg
 │
 ├── scripts/
 │   ├── build.py
@@ -96,13 +96,13 @@ reader: "Сергей Глебкин"
 
 guid: "kz-s01e01"
 
-status: "draft"
-published_at: null
+status: "published"
+published_at: "2026-09-14T00:37:00+03:00"
 
 audio:
-  url: null
+  url: "https://pub-ce6f809858c9413880af07cd4a99a4ad.r2.dev/s01/e01.mp3"
   type: "audio/mpeg"
-  duration: null
+  duration: "00:04:16"
   length: null
 
 description: >
@@ -173,15 +173,19 @@ https://audio.example.com/s01/e01.mp3
 
 ## Обложка
 
-Основная обложка:
+Основная production-обложка находится в:
+
+```text
+assets/cover.jpg
+```
+
+Параметры:
 
 ```text
 3000 × 3000 px
-JPG или PNG
+JPEG
 без прозрачности
 ```
-
-До получения финальной обложки используется placeholder.
 
 Название должно оставаться читаемым в маленьком размере.
 
@@ -291,10 +295,10 @@ Workflow должен деплоить `dist/`, а не корень репоз�
 
 Production RSS должен иметь постоянный публичный URL.
 
-Например:
+Текущий URL:
 
 ```text
-https://katridizapravil.com/feed.xml
+https://katridi.github.io/katridi-zapravil/feed.xml
 ```
 
 При будущем переезде на другой podcast-hosting старый RSS должен отдавать постоянный HTTP `301` redirect на новый feed.

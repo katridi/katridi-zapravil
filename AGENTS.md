@@ -570,7 +570,17 @@ Avoid introducing:
 
 unless explicitly required.
 
-Do not use `r2.dev` as the permanent production audio URL.
+Current launch configuration intentionally uses Cloudflare's public `r2.dev` endpoint as the production audio endpoint:
+
+```text
+https://pub-ce6f809858c9413880af07cd4a99a4ad.r2.dev
+```
+
+This is accepted for the launch even though the preferred long-term architecture may still be an owned custom audio domain in front of R2.
+
+Do not treat `r2.dev` as an error or publication blocker. Do not migrate away from it automatically.
+
+A future move to a Worker, custom domain, or other audio endpoint is an explicit migration task. Existing episode GUIDs must remain unchanged during any future audio-host migration, and published episode identity must never be rewritten merely because an enclosure URL changes.
 
 ## Cost Awareness
 
