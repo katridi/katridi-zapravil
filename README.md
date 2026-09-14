@@ -48,7 +48,7 @@ katridi-zapravil/
 │       └── ...
 │
 ├── assets/
-│   └── cover.jpg
+│   └── cover-v2.jpg
 │
 ├── scripts/
 │   ├── build.py
@@ -176,7 +176,7 @@ https://audio.example.com/s01/e01.mp3
 Основная production-обложка находится в:
 
 ```text
-assets/cover.jpg
+assets/cover-v2.jpg
 ```
 
 Параметры:
