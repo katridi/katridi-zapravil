@@ -23,8 +23,8 @@ itunes:
   explicit: false
 
 distribution:
-  yandex_music: null
+  yandex_music: "https://music.yandex.ru/album/43968264"
   spotify: "https://open.spotify.com/show/6nhPfWlJJatIwLLhzAOp4D"
   apple_podcasts: "https://podcasts.apple.com/us/podcast/катриди-заправил/id6811691316"
-  youtube: null
+  youtube: "https://www.youtube.com/playlist?list=PLRw1mD0T_C3w"
   telegram: "https://t.me/katridi_writes"
