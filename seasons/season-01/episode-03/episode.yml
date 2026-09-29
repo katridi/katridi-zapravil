@@ -1,0 +1,41 @@
+title: "Окно"
+
+season: 1
+season_title: "Воспоминания"
+episode: 3
+episode_type: "full"
+
+author: "Алексей Катриди"
+reader: "Алиса Садко"
+
+guid: "kz-s01e03"
+
+status: "published"
+published_at: "2026-09-29T08:59:12+03:00"
+
+audio:
+  url: "https://pub-ce6f809858c9413880af07cd4a99a4ad.r2.dev/s01/e03.mp3"
+  type: "audio/mpeg"
+  duration: "00:09:37"
+  length: 13849344
+
+description: >
+  «Окно» — третий рассказ из мини-сезона «Воспоминания».
+
+  О том, какие люди приходят на ум во время турбулентности.
+
+  Читает Алиса Садко.
+
+homepage_summary: "О том, какие люди приходят на ум во время турбулентности."
+
+show_notes:
+  enabled: true
+  include_description: true
+
+  blocks:
+    - type: link
+      url: "https://t.me/SadCoReader"
+      label: "Алиса Садко (SadCoReader)"
+    - type: link
+      ref: telegram
+      label: "Читать и обсуждать — в Telegram «Катриди заправил»"
