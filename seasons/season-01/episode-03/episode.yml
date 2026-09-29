@@ -35,7 +35,7 @@ show_notes:
   blocks:
     - type: link
       url: "https://t.me/SadCoReader"
-      label: "Алиса Садко (SadCoReader)"
+      label: "Алиса Садко (@SadCoReader)"
     - type: link
       ref: telegram
       label: "Читать и обсуждать — в Telegram «Катриди заправил»"
