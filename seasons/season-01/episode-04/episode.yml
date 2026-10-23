@@ -1,0 +1,39 @@
+title: "Господин из Сан-Франциско"
+
+season: 1
+season_title: "Воспоминания"
+episode: 4
+episode_type: "full"
+
+author: "Алексей Катриди"
+reader: "Анна Ординарцева"
+
+guid: "kz-s01e04"
+
+status: "published"
+published_at: "2026-10-23T12:37:52+03:00"
+
+audio:
+  url: "https://pub-ce6f809858c9413880af07cd4a99a4ad.r2.dev/s01/e04.mp3"
+  type: "audio/mpeg"
+  duration: "00:09:38"
+  length: 13867200
+
+description: >
+  «Господин из Сан-Франциско» — четвёртый рассказ из мини-сезона «Воспоминания».
+
+  О том, как Америка меняет обычных русских пацанов и обратима ли эта химическая реакция.
+
+  Читает Анна Ординарцева.
+
+homepage_summary: >
+  Как Америка меняет обычных русских пацанов и обратима ли эта химическая реакция?
+
+show_notes:
+  enabled: true
+  include_description: true
+
+  blocks:
+    - type: link
+      ref: telegram
+      label: "Читать и обсуждать — в Telegram «Катриди заправил»"
