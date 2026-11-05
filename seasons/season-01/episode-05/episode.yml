@@ -10,8 +10,8 @@ reader: "Александр Бейлин"
 
 guid: "kz-s01e05"
 
-status: "draft"
-published_at: null
+status: "published"
+published_at: "2026-11-06T00:36:19+02:00"
 
 audio:
   url: "https://pub-ce6f809858c9413880af07cd4a99a4ad.r2.dev/s01/e05.mp3"
