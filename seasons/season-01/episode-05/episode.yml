@@ -1,0 +1,38 @@
+title: "Телефонная линия"
+
+season: 1
+season_title: "Воспоминания"
+episode: 5
+episode_type: "full"
+
+author: "Алексей Катриди"
+reader: "Александр Бейлин"
+
+guid: "kz-s01e05"
+
+status: "draft"
+published_at: null
+
+audio:
+  url: "https://pub-ce6f809858c9413880af07cd4a99a4ad.r2.dev/s01/e05.mp3"
+  type: "audio/mpeg"
+  duration: "00:06:41"
+  length: 9941328
+
+description: >
+  «Телефонная линия» — пятый и последний рассказ мини-сезона «Воспоминания».
+
+  О звонках из прошлого в настоящее.
+
+  Читает Александр Бейлин.
+
+homepage_summary: "О звонках из прошлого в настоящее."
+
+show_notes:
+  enabled: true
+  include_description: true
+
+  blocks:
+    - type: link
+      ref: telegram
+      label: "Читать и обсуждать — в Telegram «Катриди заправил»"
