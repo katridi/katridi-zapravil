@@ -1,0 +1,34 @@
+title: "Бонус к «Щенку» — Сергей Глебкин о спасении чужой собаки"
+
+season: 1
+season_title: "Воспоминания"
+episode: 6
+episode_type: "bonus"
+
+author: "Алексей Катриди"
+reader: "Сергей Глебкин"
+
+guid: "kz-s01e06"
+
+status: "published"
+published_at: "2026-11-12T17:15:41+02:00"
+
+audio:
+  url: "https://pub-ce6f809858c9413880af07cd4a99a4ad.r2.dev/s01/e06.mp3"
+  type: "audio/mpeg"
+  duration: "00:08:19"
+  length: 12745152
+
+description: >
+  В первом выпуске «Катриди заправил» Сергей Глебкин читал рассказ «Щенок».
+  В бонусном выпуске он рассказывает историю из своего детства — о спасении чужой собаки и о том, какие бывают хозяева.
+
+homepage_summary: "История Сергея Глебкина о спасении чужой собаки и о том, какие бывают хозяева."
+
+show_notes:
+  enabled: true
+  include_description: true
+  blocks:
+    - type: link
+      ref: telegram
+      label: "Читать и обсуждать — в Telegram «Катриди заправил»"
