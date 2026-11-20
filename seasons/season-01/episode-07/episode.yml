@@ -1,0 +1,38 @@
+title: "Бонус к «Окну»"
+
+season: 1
+season_title: "Воспоминания"
+episode: 7
+episode_type: "bonus"
+
+author: "Алексей Катриди"
+reader: "Алиса Садко"
+
+guid: "kz-s01e07"
+
+status: "published"
+published_at: "2026-11-20T17:37:11+02:00"
+
+audio:
+  url: "https://pub-ce6f809858c9413880af07cd4a99a4ad.r2.dev/s01/e07.mp3"
+  type: "audio/mpeg"
+  duration: "00:04:57"
+  length: 7117632
+
+description: >
+  В третьем выпуске «Катриди заправил» Алиса Садко читала рассказ «Окно» — о том, кого вспоминаешь во время турбулентности.
+
+  В бонусном выпуске Алиса делится историями из своих перелётов и рассказывает, почему для неё каждый из них — мини-версия жизни.
+
+homepage_summary: "Алиса Садко — о том, какими разными бывают перелёты и почему для неё каждый из них — мини-версия жизни."
+
+show_notes:
+  enabled: true
+  include_description: true
+  blocks:
+    - type: link
+      url: "https://t.me/SadCoReader"
+      label: "Алиса Садко (@SadCoReader)"
+    - type: link
+      ref: telegram
+      label: "Читать и обсуждать — в Telegram «Катриди заправил»"
