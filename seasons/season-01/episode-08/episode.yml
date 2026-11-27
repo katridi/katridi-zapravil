@@ -1,0 +1,36 @@
+title: "Бонус к «Телефонной линии»"
+
+season: 1
+season_title: "Воспоминания"
+episode: 8
+episode_type: "bonus"
+
+author: "Алексей Катриди"
+reader: "Александр Бейлин"
+
+guid: "kz-s01e08"
+
+status: "published"
+published_at: "2026-11-27T17:21:47+02:00"
+
+audio:
+  url: "https://pub-ce6f809858c9413880af07cd4a99a4ad.r2.dev/s01/e08.mp3"
+  type: "audio/mpeg"
+  duration: "00:03:08"
+  length: 4507055
+
+description: |-
+  Бонус к рассказу «Телефонная линия».
+
+  Александр рассказывает, какие вещи в детстве были ему особенно дороги.
+
+homepage_summary: "Александр вспоминает самые дорогие ему вещи из детства."
+
+show_notes:
+  enabled: true
+  include_description: true
+
+  blocks:
+    - type: link
+      ref: telegram
+      label: "Читать и обсуждать — в Telegram «Катриди заправил»"
